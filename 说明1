@@ -1,0 +1,125 @@
+1.processes = self.processes_from_section(parser, section,group_name, ProcessConfig)
+2.
+def processes_from_section(self, parser, section, group_name,
+        try:
+            return self._processes_from_section(
+                parser, section, group_name, klass)
+        except ValueError as e:
+3.
+def _processes_from_section(self, parser, section, group_name,
+                                klass=None):
+    programs = [ProcessConfig,ProcessConfig,ProcessConfig]          # 单个配置文件的多进程
+    return programs
+process结果是[ProcessConfig,ProcessConfig,ProcessConfig]
+----------------------------------------------------------------------------------------------------------------------------------------
+group_processes.extend(processes)
+group_processes是所有配置文件的进程[[ProcessConfig,ProcessConfig,ProcessConfig],[ProcessConfig,ProcessConfig,ProcessConfig]]
+groups.append(ProcessGroupConfig(self, group_name, priority, group_processes))  # 将全部进程放进进程组中
+groups：[ProcessGroupConfig,ProcessGroupConfig,ProcessGroupConfig]
+----------------------------------------------------------------------------------------------------------------------------------------
+上面的没有执行，真正执行的是下面，所以processes   [ProcessConfig,ProcessConfig,ProcessConfig]
+groups.append(ProcessGroupConfig(self, program_name, priority, processes))
+----------------------------------------------------------------------------------------------------------------------------------------
+ProcessGroupConfig:
+self.process_configs = process_configs
+process_configs:[ProcessConfig,ProcessConfig,ProcessConfig]
+到现在为止，还只是配置文件
+方法：将ProcessGroupConfig自身实例实例（配置信息）传给进程类
+def make_group(self):
+    from supervisor.process import ProcessGroup
+    return ProcessGroup(self)
+
+ProcessGroup方法很少，主要看父进程
+class ProcessGroup(ProcessGroupBase):
+    def transition(self):
+        for proc in self.processes.values():
+            proc.transition()
+
+
+class ProcessGroupBase(object):
+    def __init__(self, config):
+        self.config = config
+        self.processes = {}
+        for pconfig in self.config.process_configs:
+            self.processes[pconfig.name] = pconfig.make_process(self)
+config：ProcessGroupConfig实例
+self.config.process_configs：[ProcessConfig,ProcessConfig,ProcessConfig]
+self.processes[pconfig.name] = pconfig.make_process(self)
+如：
+self.processes['st'] = pconfig.make_process(self)  单个配置文件的进程组,如果在配置文件中多进程未加上进程名，会自动加_1
+self.processes['st_1'] = pconfig.make_process(self)  单个配置文件的进程组
+self.processes['st_2'] = pconfig.make_process(self)  单个配置文件的进程组
+此时self是ProcessGroup(ProcessGroupBase)实例
+pconfig是ProcessConfig的实例，现在又回来了
+相当如将一个个实例数组放到容器中，在容器中调用每个实例的方法，这样就形成了管理进程、
+def make_process(self, group=None):
+    # 创建进程，这个是核心
+    from supervisor.process import Subprocess
+    process = Subprocess(self)
+    process.group = group
+    # 这个guoup是ProcessGroup(ProcessGroupBase)实例
+    return process
+
+class Subprocess(object):
+    def __init__(self, config):
+        # config 是 ProcessConfig
+        self.config = config # 这个类倒来倒去，config是一层包着一层 ...
+        self.dispatchers = {}
+        self.pipes = {}
+        self.state = ProcessStates.STOPPED  # 初始状态是stop
+Subprocess中有执行配置文件命令等各种方法
+按照上面的流程，现在
+self.processes['st'] = pconfig.make_process(self)
+self.processes['st']的结果为Subprocess实例，该实例有一个group属性，为自身
+
+
+socket
+self是socket实例
+make_http_servers(self, supervisord)
+hs = supervisor_af_unix_http_server(socketname,sockchmod, sockchown,logger_object=wrapper)
+
+A:supervisor_af_unix_http_server(supervisor_http_server)
+B:supervisor_http_server(http_server.http_server)
+C:http_server (asyncore.dispatcher)
+D:dispatcher
+这是一个多重继承的类
+dispatcher：主要方法是创建socket，接受、发送socket信息，处理函数handle_read_event，设置全局变量socket_map，形成
+            socket_map文件{'文件描述符'：对应的处理类}
+supervisor_af_unix_http_server：主要是__init__，覆盖了父类的__init__
+
+supervisor_af_unix_http_server：
+先新建了一个临时sock文件，之后调用self.prebind(sock, logger_object)，最后调用self.postbind()
+注意sock文件在option中已经建立好了
+prebind是B中的方法，在方法中，初始化了dispatcher，asyncore.dispatcher.__init__ (self)
+调用了dispatcher中的
+self.set_socket(sock)
+self.handlers = []
+self.set_reuse_addr()  # 设置端口复用
+在初始化中，参数都是空的，但是self._map = socket_map这行语句建立了两个变量的关系
+self.set_socket(sock)： 之后调用add_channel
+map = self._map
+map[self._fileno] = self
+这样就形成全局变量socket_map，key是文件描述符，value是self，也就是
+A:supervisor_af_unix_http_server(supervisor_http_server)
+B:supervisor_http_server(http_server.http_server)
+C:http_server (asyncore.dispatcher)
+D:dispatcher
+在A-D中，初始化的有
+supervisor_af_unix_http_server和dispatcher
+最后删除临时sock
+self.postbind() 中定义计时器和记录log
+至于为何要建立临时sock，应该是为了测试。创建同样条件的socket是否能够连通，如果临时的可以，那么真正的也没有问题
+
+
+
+
+
+
+
+
+
+
+
+
+
+

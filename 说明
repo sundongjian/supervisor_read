@@ -1,0 +1,35 @@
+├── asynchat_25.py             dispatcher的子类，核心是handle_read函数，发送数据函数。handler_read调用xmlrpc_handler.py  collector found_terminator，
+├── asyncore_25.py             1.loop，poll和select，选出可read和write的描述符并且调用该描述符对应的实例的handle_read_event()/handle_write_event()
+                                  2.dispatcher调度类，调度类主要设置sockmap，即sock文件描述符对应的dispatcher实例（子），还有handler各种操作假接口函数（实际是log报错函数）
+├── auth_handler.py            用户密码cookie验证，通过验证后再执行handler的handler_request，核心是handle_request
+├── counter.py                 计数器
+├── default_handler.py         default_handler类，主要是处理请求，核心函数是handle_request，request参数不知道从哪里来，所以很难分析
+├── filesys.py                 文件模块，兼容不同的文件系统
+├── http_date.py               各种时间的匹配格式
+├── http_server.py              http_request，主要是处理request，http_channel，async_chat的子类，http_server，dispatcher的子类
+├── logger.py                   log模块，可记录和回卷备份
+├── producers.py                对字符串/list等进行size分块输出
+├── util.py                     工具，时间单位和存储单位的转换，object信息转化为html
+└── xmlrpc_handler.py           xmlrpc_handler和collector。continue_request是核心函数，里面有call用法，就是调用对应的函数，子类supervisor_xmlrpc_handler是最重要的
+
+
+
+├── childutils.py                定义了rpc客户端接口，事件和进程的输出接口
+├── compat.py                    兼容性，py2和py3分别导入不同的库，其他模块从这两个库中导入库
+├── confecho.py                  将supervisord.conf 输出到缓冲
+├── datatypes.py                 数据转换，涉及到用户信息，url，str --->list 路径等等
+├── dispatchers.py               调度程序，用于mainloop的Asyncore分派器，表示进程通道(stdin、stdout或stderr)。这个类是抽象的
+├── events.py                    进程日志格式事件，callbacks事件循环
+├── http_client.py               HTTPHandler，继承自async_chat，客户端的rpc
+├── http.py                      各种继承自httpserver的子类，一部分rpc的handler，make_http_servers注册接口
+├── loggers.py                   log
+├── options.py                   核心配置
+├── pidproxy.py                  PidProxy，通过setup.py安装，信号，pidfile之类
+├── poller.py                    select.poll，返回可读和可写的文件描述符
+├── process.py                   Subprocess，进程类，有分析命令行，执行命令对应的函数
+├── socket_manager.py            和共享资源有关，还不太清楚
+├── states.py                    进程和事件的状态描述
+├── supervisorctl.py             命令行，将命令通过rpc发送
+├── supervisord.py               supervisord的主程序入口
+├── web.py                       http相关的东西
+├── xmlrpc.py
